@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import pygame
-
+import time
 
 # Inicialización de la cámara
 cap = cv2.VideoCapture(0)
@@ -14,7 +14,9 @@ if not cap.isOpened():
 grafiti = None
 ultimo_punto = None
 laser_activo = False
+colorElegido = False
 colorLaser = 0,0,0
+hayPintura = True
 
 # Inicialización de botones de color y posiciones
 colores_botones = [
@@ -33,13 +35,13 @@ for i, (color, nombreColor) in enumerate(colores_botones):
     x_pos = ancho_frame * (i + 1) // 8
     botones.append((color, (x_pos, int(altura_botones)), nombreColor))
 
-btn_Reset = (ancho_frame - 50, int(cap.get(4) // 8))
-btn_Borrar = (ancho_frame - 50, int(cap.get(4) * 2 // 8))
+btn_Reset = (ancho_frame - 60, int(cap.get(4) // 8))
+btn_Borrar = (ancho_frame - 60, int(cap.get(4) * 2 // 8))
 
 
 # Parámetros del slider
 slider_min = 10  # Tamaño mínimo del trazo
-slider_max = 50  # Tamaño máximo del trazo
+slider_max = 51  # Tamaño máximo del trazo
 slider_width = 20  # Ancho del slider
 slider_height = cap.get(4) * 0.8  # Altura del área del slider (80% de la altura de la pantalla)
 center_y = int(cap.get(4) // 2)  # Centrar en el eje Y de la pantalla
@@ -56,6 +58,50 @@ pygame.mixer.init()
 # pygame.mixer.music.load('spray.mp3')
 
 spraySfx = pygame.mixer.Sound("spray.mp3")
+
+# Parámetros del temporizador
+tiempo_total = 10  # 90 segundos
+tiempo_restante = tiempo_total
+start_time = None  # Momento en que se empieza a pintar
+tiempo_terminado = None
+
+# Parámetros de la barra de pintura
+barra_ancho_total = cap.get(3) - 100  # Ancho total de la barra
+barra_alto = 20  # Alto de la barra
+barra_x = 50  # Posición X de la barra
+barra_y = int(cap.get(4) - 10)  # Posición Y de la barra, debajo de los botones
+
+# ============================================= Temporizador y barra =====================================================
+def dibujar_barra_pintura(frame, tiempo_restante):
+    # Calculamos el ancho proporcional de la barra basado en el tiempo restante
+    ancho_barra = int((tiempo_restante / tiempo_total) * barra_ancho_total)
+    
+    # Asegurarnos de que las coordenadas sean enteros
+    cv2.rectangle(frame, (int(barra_x), int(barra_y)), (int(barra_x + barra_ancho_total), int(barra_y + barra_alto)), (255, 255, 255), 2)
+    
+    # Dibujar la barra que representa la pintura restante
+    if ancho_barra > 0:
+        cv2.rectangle(frame, (int(barra_x), int(barra_y)), (int(barra_x + ancho_barra), int(barra_y + barra_alto)), (0, 255, 0), -1)
+
+
+# ============================================= Actualización del tiempo =================================================
+def actualizar_tiempo():
+    global start_time, tiempo_restante
+    if laser_activo and colorElegido is True and colorLaser is not (0,0,0):
+        if start_time is None:
+            # Si empezamos a pintar, registramos el tiempo de inicio
+            start_time = time.time()
+        else:
+            # Calculamos cuánto tiempo ha pasado desde que se empezó a pintar
+            tiempo_pasado = time.time() - start_time
+            start_time = time.time()  # Actualizamos el tiempo de inicio para la siguiente vez
+            tiempo_restante -= tiempo_pasado  # Reducimos el tiempo restante
+            tiempo_restante = max(tiempo_restante, 0)  # No dejamos que el tiempo sea negativo
+
+
+    else:
+        # Si no estamos pintando, pausamos el temporizador
+        start_time = None
 
 while True:
     # Capturar cada frame
@@ -89,7 +135,7 @@ while True:
     umbral_valor_max = 250  # Valor máximo de V en HSV para considerar el láser activo
     if maxVal > umbral_valor_max:
         punto_actual = maxLoc
-        if laser_activo and ultimo_punto is not None:
+        if laser_activo and ultimo_punto is not None and colorElegido and hayPintura:
             # Dibujar una línea en la imagen de grafiti
             cv2.line(grafiti, ultimo_punto, punto_actual, (colorLaser), tamaño_trazo)  # Rojo en BGR
         # Actualizar el último punto y marcar el láser como activo
@@ -111,12 +157,26 @@ while True:
         spraySfx.stop()
 
 
-    
+    # Actualizar el tiempo si el láser está pintando
+    actualizar_tiempo()
+
+    # Dibujar la barra de pintura
+    dibujar_barra_pintura(frame, tiempo_restante)
+
+    if tiempo_restante == 0:
+        hayPintura = False
+        spraySfx.stop()
+        tiempo_terminado = True
+        
+        
+
+
 # ============================================ Botones ===================================================
 
     for color, (x, y), nombreColor in botones:
         cv2.circle(frame, (x, y), radio_boton, color, -1)
         if distancia(maxLoc, (x, y)) < radio_boton:
+            colorElegido = True
             print(f"Color {nombreColor} activado")
             colorLaser = color
 
@@ -124,12 +184,15 @@ while True:
     cv2.circle(frame, btn_Reset, radio_boton, (0, 0, 0), -1)
     if distancia(maxLoc, btn_Reset) < radio_boton:
         print("Canvas borrado")
+        colorElegido = False
         grafiti = np.zeros_like(frame)
-        colorLaser = (0, 0, 0)
+        # colorLaser = (0, 0, 0)
+        laser_activo = False
 
     # Botón de borrar
     cv2.circle(frame, btn_Borrar, radio_boton, (255, 255, 255), -1)
     if distancia(maxLoc, btn_Borrar) < radio_boton:
+        colorElegido = True
         print("Borrador activado")
         colorLaser = (0, 0, 0)
 
