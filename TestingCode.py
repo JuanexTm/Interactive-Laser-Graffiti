@@ -29,14 +29,23 @@ altura_botones = cap.get(4) - 50  # Altura de los botones
 radio_boton = 30  # Radio de los botones
 ancho_frame = int(cap.get(3))
 
-for i, (color, _) in enumerate(colores_botones):
+for i, (color, nombreColor) in enumerate(colores_botones):
     x_pos = ancho_frame * (i + 1) // 8
-    botones.append((color, (x_pos, int(altura_botones))))
+    botones.append((color, (x_pos, int(altura_botones)), nombreColor))
 
 btn_Reset = (ancho_frame - 50, int(cap.get(4) // 8))
 btn_Borrar = (ancho_frame - 50, int(cap.get(4) * 2 // 8))
 
 
+# Parámetros del slider
+slider_min = 10  # Tamaño mínimo del trazo
+slider_max = 50  # Tamaño máximo del trazo
+slider_width = 20  # Ancho del slider
+slider_height = cap.get(4) * 0.8  # Altura del área del slider (80% de la altura de la pantalla)
+center_y = int(cap.get(4) // 2)  # Centrar en el eje Y de la pantalla
+slider_x = 25  # Posición en X del slider
+slider_pos = center_y  # Posición inicial del control del slider
+tamaño_trazo = 20  # Tamaño inicial del trazo
 
 
 # Función para calcular la distancia euclidiana entre dos puntos
@@ -82,7 +91,7 @@ while True:
         punto_actual = maxLoc
         if laser_activo and ultimo_punto is not None:
             # Dibujar una línea en la imagen de grafiti
-            cv2.line(grafiti, ultimo_punto, punto_actual, (colorLaser), 20)  # Rojo en BGR
+            cv2.line(grafiti, ultimo_punto, punto_actual, (colorLaser), tamaño_trazo)  # Rojo en BGR
         # Actualizar el último punto y marcar el láser como activo
         ultimo_punto = punto_actual
         laser_activo = True
@@ -103,14 +112,12 @@ while True:
 
 
     
-
-
 # ============================================ Botones ===================================================
 
-    for color, (x, y) in botones:
+    for color, (x, y), nombreColor in botones:
         cv2.circle(frame, (x, y), radio_boton, color, -1)
         if distancia(maxLoc, (x, y)) < radio_boton:
-            print(f"Color {color} activado")
+            print(f"Color {nombreColor} activado")
             colorLaser = color
 
     # Botón de reset
@@ -127,8 +134,25 @@ while True:
         colorLaser = (0, 0, 0)
 
 
-    # ==================================================================================================
+    # ============================================= Slider =====================================================
 
+    # Dibujar el área del slider centrada en el eje Y
+    top_y = int(center_y - slider_height / 2)
+    bottom_y = int(center_y + slider_height / 2)
+    cv2.rectangle(frame, (slider_x, top_y), (slider_x + slider_width, bottom_y), (100, 100, 100), -1)
+
+    # Dibujar el control del slider
+    cv2.rectangle(frame, (slider_x, slider_pos - 10), (slider_x + slider_width, slider_pos + 10), (255, 255, 255), -1)
+
+    # Comprobar si el láser está dentro del área del slider
+    if slider_x < maxLoc[0] < slider_x + slider_width and top_y < maxLoc[1] < bottom_y:
+        slider_pos = maxLoc[1]
+        tamaño_trazo = int(np.interp(slider_pos, [top_y, bottom_y], [slider_max, slider_min]))
+
+    # Mostrar el tamaño del trazo
+    cv2.putText(frame, f'{tamaño_trazo}', (slider_x + 40, top_y - 10), cv2.FONT_ITALIC, 1, (255, 255, 255), 2)
+
+    # ==================================================================================================
 
 
     # Combinar la imagen de grafiti con el frame original
