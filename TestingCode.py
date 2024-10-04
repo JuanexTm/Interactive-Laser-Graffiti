@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import pygame
 
 
 # Inicialización de la cámara
@@ -19,6 +20,11 @@ colorLaser = 0,0,0
 # Función para calcular la distancia euclidiana entre dos puntos
 def distancia(p1, p2):
     return np.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
+
+pygame.mixer.init()
+# pygame.mixer.music.load('spray.mp3')
+
+spraySfx = pygame.mixer.Sound("spray.mp3")
 
 while True:
     # Capturar cada frame
@@ -59,13 +65,22 @@ while True:
         ultimo_punto = punto_actual
         laser_activo = True
 
+        # pygame.mixer.music.play(loops=-1)
+        if colorLaser == (0,0,0):
+            spraySfx.stop()
+        else:
+            spraySfx.play(loops=-1)
+
     else:
         # Si el láser no está detectado, resetear el estado
         laser_activo = False
         ultimo_punto = None
 
+        #pygame.mixer.music.stop()
+        spraySfx.stop()
 
 
+    
 
 # ============================================ Botones ===================================================
 
