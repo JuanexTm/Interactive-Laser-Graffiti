@@ -16,6 +16,28 @@ ultimo_punto = None
 laser_activo = False
 colorLaser = 0,0,0
 
+# Inicialización de botones de color y posiciones
+colores_botones = [
+    ((255, 0, 0), 'Azul'), ((0, 0, 255), 'Rojo'),
+    ((255, 90, 160), 'Lila'), ((0, 255, 255), 'Amarillo'),
+    ((0, 255, 0), 'Verde'), ((255, 0, 255), 'Rosa'),
+    ((255, 255, 255), 'Blanco')
+]
+
+botones = []
+altura_botones = cap.get(4) - 50  # Altura de los botones
+radio_boton = 30  # Radio de los botones
+ancho_frame = int(cap.get(3))
+
+for i, (color, _) in enumerate(colores_botones):
+    x_pos = ancho_frame * (i + 1) // 8
+    botones.append((color, (x_pos, int(altura_botones))))
+
+btn_Reset = (ancho_frame - 50, int(cap.get(4) // 8))
+btn_Borrar = (ancho_frame - 50, int(cap.get(4) * 2 // 8))
+
+
+
 
 # Función para calcular la distancia euclidiana entre dos puntos
 def distancia(p1, p2):
@@ -82,119 +104,30 @@ while True:
 
     
 
+
 # ============================================ Botones ===================================================
 
-# Color Azul
-    btn_Azul_x = frame.shape[1] // 8
-    btn_Azul_y = frame.shape[0] - 50
-    radio_boton = 30  # Radio del botón circular
+    for color, (x, y) in botones:
+        cv2.circle(frame, (x, y), radio_boton, color, -1)
+        if distancia(maxLoc, (x, y)) < radio_boton:
+            print(f"Color {color} activado")
+            colorLaser = color
 
-    # Dibujar el botón en el frame
-    cv2.circle(frame, (btn_Azul_x, btn_Azul_y), radio_boton, (255, 0, 0), -1)
-
-    if distancia(maxLoc, (btn_Azul_x, btn_Azul_y)) < radio_boton:
-        print("Color Azul activado")
-        colorLaser = 255, 0, 0
-
-# Color Rojo
-    btn_Rojo_x = frame.shape[1] * 2 // 8
-    btn_Rojo_y = frame.shape[0] - 50
-    radio_boton = 30  # Radio del botón circular
-
-    # Dibujar el botón en el frame
-    cv2.circle(frame, (btn_Rojo_x, btn_Rojo_y), radio_boton, (0, 0, 255), -1)
-
-    if distancia(maxLoc, (btn_Rojo_x, btn_Rojo_y)) < radio_boton:
-        print("Color Rojo activado")
-        colorLaser = 0, 0, 255
-
-# Color Lila
-    btn_Lila_x = frame.shape[1] * 3 // 8
-    btn_Lila_y = frame.shape[0] - 50
-    radio_boton = 30  # Radio del botón circular
-
-    # Dibujar el botón en el frame
-    cv2.circle(frame, (btn_Lila_x, btn_Lila_y), radio_boton, (255, 90, 160), -1)
-
-    if distancia(maxLoc, (btn_Lila_x, btn_Lila_y)) < radio_boton:
-        print("Color Lila activado")
-        colorLaser = 255, 90, 160
-
-# Color Amarillo
-    btn_Amarillo_x = frame.shape[1] * 4 // 8
-    btn_Amarillo_y = frame.shape[0] - 50
-    radio_boton = 30  # Radio del botón circular
-
-    # Dibujar el botón en el frame
-    cv2.circle(frame, (btn_Amarillo_x, btn_Amarillo_y), radio_boton, (0, 255, 255), -1)
-
-    if distancia(maxLoc, (btn_Amarillo_x, btn_Amarillo_y)) < radio_boton:
-        print("Color Amarillo activado")
-        colorLaser = 0, 255, 255
-
-# Color Verde
-    btn_Verde_x = frame.shape[1] * 5 // 8
-    btn_Verde_y = frame.shape[0] - 50
-    radio_boton = 30  # Radio del botón circular
-
-    # Dibujar el botón en el frame
-    cv2.circle(frame, (btn_Verde_x, btn_Verde_y), radio_boton, (0, 255, 0), -1)
-
-    if distancia(maxLoc, (btn_Verde_x, btn_Verde_y)) < radio_boton:
-        print("Color Verde activado")
-        colorLaser = 0, 255, 0
-
-# Color Rosa
-    btn_Rosa_x = frame.shape[1] * 6 // 8
-    btn_Rosa_y = frame.shape[0] - 50
-    radio_boton = 30  # Radio del botón circular
-
-    # Dibujar el botón en el frame
-    cv2.circle(frame, (btn_Rosa_x, btn_Rosa_y), radio_boton, (255, 0, 255), -1)
-
-    if distancia(maxLoc, (btn_Rosa_x, btn_Rosa_y)) < radio_boton:
-        print("Color Rosa activado")
-        colorLaser = 255, 0, 255
-
-# Color Blanco
-    btn_Blanco_x = frame.shape[1] * 7 // 8
-    btn_Blanco_y = frame.shape[0] - 50
-    radio_boton = 30  # Radio del botón circular
-
-    # Dibujar el botón en el frame
-    cv2.circle(frame, (btn_Blanco_x, btn_Blanco_y), radio_boton, (255, 255, 255), -1)
-
-    if distancia(maxLoc, (btn_Blanco_x, btn_Blanco_y)) < radio_boton:
-        print("Color Blanco activado")
-        colorLaser = 255, 255, 255
-
-# Reset
-    btn_Reset_x = frame.shape[1] - 50
-    btn_Reset_y = frame.shape[0] // 8
-    radio_boton = 30  # Radio del botón circular
-
-    # Dibujar el botón en el frame
-    cv2.circle(frame, (btn_Reset_x, btn_Reset_y), radio_boton, (0, 0, 0), -1)
-
-    if distancia(maxLoc, (btn_Reset_x, btn_Reset_y)) < radio_boton:
+    # Botón de reset
+    cv2.circle(frame, btn_Reset, radio_boton, (0, 0, 0), -1)
+    if distancia(maxLoc, btn_Reset) < radio_boton:
         print("Canvas borrado")
         grafiti = np.zeros_like(frame)
-        colorLaser = 0, 0, 0
+        colorLaser = (0, 0, 0)
 
-# Borrador (Color Negro)
-    btn_Negro_x = frame.shape[1] - 50
-    btn_Negro_y = frame.shape[0] * 2 // 8
-    radio_boton = 30  # Radio del botón circular
+    # Botón de borrar
+    cv2.circle(frame, btn_Borrar, radio_boton, (255, 255, 255), -1)
+    if distancia(maxLoc, btn_Borrar) < radio_boton:
+        print("Borrador activado")
+        colorLaser = (0, 0, 0)
 
-    # Dibujar el botón en el frame
-    cv2.circle(frame, (btn_Negro_x, btn_Negro_y), radio_boton, (255, 255, 255), -1)
-
-    if distancia(maxLoc, (btn_Negro_x, btn_Negro_y)) < radio_boton:
-        print("Color Negro activado")
-        colorLaser = 0, 0, 0
 
     # ==================================================================================================
-
 
 
 
