@@ -172,16 +172,27 @@ def superponer_imagen_con_alpha(fondo, imagen_rgba, pos):
         return imagen
 
 # Tamaño de los botones
-button_size = (116, 116)
+button_size = (160, 160)
 
 # Carga de imágenes con el nuevo sistema de respaldo
-icon_red = cargar_imagen_segura('colorRed.png', button_size)
-icon_yellow = cargar_imagen_segura('colorYellow.png', button_size)
-icon_green = cargar_imagen_segura('colorGreen.png', button_size)
-icon_blue = cargar_imagen_segura('colorBlue.png', button_size)
-icon_lila = cargar_imagen_segura('colorLila.png', button_size)
-icon_pink = cargar_imagen_segura('colorPink.png', button_size)
-icon_white = cargar_imagen_segura('colorWhite.png', button_size)
+icon_red = cargar_imagen_segura('Assets/redSpray.png', button_size)
+icon_yellow = cargar_imagen_segura('Assets/yellowSpray.png', button_size)
+icon_green = cargar_imagen_segura('Assets/greenSpray.png', button_size)
+icon_blue = cargar_imagen_segura('Assets/blueSpray.png', button_size)
+icon_lila = cargar_imagen_segura('Assets/purpleSpray.png', button_size)
+icon_pink = cargar_imagen_segura('Assets/pinkSpray.png', button_size)
+icon_white = cargar_imagen_segura('Assets/whiteSpray.png', button_size)
+
+
+reset_button_size = (50, 50)  # Ajusta estos valores según el tamaño que desees
+slider_button_size = (83, 83)  # Ajusta para el botón del slider
+slider_size = (80, 560)  # Ajusta para el rango del slider
+
+# Cargar los nuevos íconos
+icon_reset = cargar_imagen_segura('Assets/resetButton.png', reset_button_size)
+icon_eraser = cargar_imagen_segura('Assets/eraserButton.png', reset_button_size)
+icon_slider_button = cargar_imagen_segura('Assets/sliderButton.png', slider_button_size)
+icon_slider = cargar_imagen_segura('Assets/slider.png', slider_size)
 
 # Inicialización de botones de color y posiciones
 colores_botones = [
@@ -385,7 +396,9 @@ while True:
     radio_boton = 35
     
     # Botón de reset
-    cv2.circle(combined, btn_Reset, radio_boton, (0, 0, 0), -1)
+    reset_x = btn_Reset[0] - reset_button_size[0]//2
+    reset_y = btn_Reset[1] - reset_button_size[1]//2
+    combined = superponer_imagen_con_alpha(combined, icon_reset, (reset_x, reset_y))
     if distancia(maxLoc, btn_Reset) < radio_boton:
         print("Canvas borrado")
         colorElegido = False
@@ -394,7 +407,9 @@ while True:
         laser_activo = False
 
     # Botón de borrar
-    cv2.circle(combined, btn_Borrar, radio_boton, (255, 255, 255), -1)
+    eraser_x = btn_Borrar[0] - reset_button_size[0]//2
+    eraser_y = btn_Borrar[1] - reset_button_size[1]//2
+    combined = superponer_imagen_con_alpha(combined, icon_eraser, (eraser_x, eraser_y))
     if distancia(maxLoc, btn_Borrar) < radio_boton:
         colorElegido = True
         print("Borrador activado")
@@ -406,18 +421,20 @@ while True:
     # Dibujar el área del slider centrada en el eje Y
     top_y = int(center_y - slider_height / 2)
     bottom_y = int(center_y + slider_height / 2)
-    cv2.rectangle(combined, (slider_x, top_y), (slider_x + slider_width, bottom_y), (100, 100, 100), -1)
+    # Dibujar el fondo del slider con el nuevo ícono
+    slider_background_x = slider_x
+    slider_background_y = top_y
+    combined = superponer_imagen_con_alpha(combined, icon_slider, (slider_background_x, slider_background_y))
 
-    # Dibujar el control del slider
-    cv2.rectangle(combined, (slider_x, slider_pos - 10), (slider_x + slider_width, slider_pos + 10), (255, 255, 255), -1)
+    # Dibujar el control del slider con el nuevo ícono
+    slider_control_x = slider_x - (slider_button_size[0] - slider_width)//2
+    slider_control_y = slider_pos - slider_button_size[1]//2
+    combined = superponer_imagen_con_alpha(combined, icon_slider_button, (slider_control_x, slider_control_y))
 
     # Comprobar si el láser está dentro del área del slider
     if slider_x < maxLoc[0] < slider_x + slider_width and top_y < maxLoc[1] < bottom_y:
         slider_pos = maxLoc[1]
         tamaño_trazo = int(np.interp(slider_pos, [top_y, bottom_y], [slider_max, slider_min]))
-
-    # Mostrar el tamaño del trazo
-    cv2.putText(combined, f'{tamaño_trazo}', (slider_x + 40, top_y - 10), cv2.FONT_ITALIC, 1, (255, 255, 255), 2)
 
     # ==================================================================================================
 
