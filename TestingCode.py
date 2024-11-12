@@ -183,16 +183,43 @@ icon_lila = cargar_imagen_segura('Assets/Sprays/purpleSpray.png', button_size)
 icon_pink = cargar_imagen_segura('Assets/Sprays/pinkSpray.png', button_size)
 icon_white = cargar_imagen_segura('Assets/Sprays/whiteSpray.png', button_size)
 
+icon_red_selected = cargar_imagen_segura('Assets/SpraysSelected/redSpraySelected.png', button_size)
+icon_yellow_selected = cargar_imagen_segura('Assets/SpraysSelected/yellowSpraySelected.png', button_size)
+icon_green_selected = cargar_imagen_segura('Assets/SpraysSelected/greenSpraySelected.png', button_size)
+icon_blue_selected = cargar_imagen_segura('Assets/SpraysSelected/blueSpraySelected.png', button_size)
+icon_lila_selected = cargar_imagen_segura('Assets/SpraysSelected/purpleSpraySelected.png', button_size)
+icon_pink_selected = cargar_imagen_segura('Assets/SpraysSelected/pinkSpraySelected.png', button_size)
+icon_white_selected = cargar_imagen_segura('Assets/SpraysSelected/whiteSpraySelected.png', button_size)
 
-reset_button_size = (50, 50)  # Ajusta estos valores según el tamaño que desees
-slider_button_size = (83, 83)  # Ajusta para el botón del slider
+# Crear un diccionario para mapear los íconos normales y seleccionados
+iconos_estado = {
+    'Rojo': {'normal': icon_red, 'selected': icon_red_selected},
+    'Amarillo': {'normal': icon_yellow, 'selected': icon_yellow_selected},
+    'Verde': {'normal': icon_green, 'selected': icon_green_selected},
+    'Azul': {'normal': icon_blue, 'selected': icon_blue_selected},
+    'Lila': {'normal': icon_lila, 'selected': icon_lila_selected},
+    'Rosa': {'normal': icon_pink, 'selected': icon_pink_selected},
+    'Blanco': {'normal': icon_white, 'selected': icon_white_selected}
+}
+
+reset_button_size = (90, 90)  # Ajusta estos valores según el tamaño que desees
+slider_button_size = (84, 100)  # Ajusta para el botón del slider
 slider_size = (80, 560)  # Ajusta para el rango del slider
+slider_width = 20  # Ancho del área activa del slider
 
 # Cargar los nuevos íconos
 icon_reset = cargar_imagen_segura('Assets/resetButton.png', reset_button_size)
 icon_eraser = cargar_imagen_segura('Assets/eraserButton.png', reset_button_size)
 icon_slider_button = cargar_imagen_segura('Assets/sliderButton.png', slider_button_size)
 icon_slider = cargar_imagen_segura('Assets/slider.png', slider_size)
+
+if icon_slider_button is None:
+    print("Error: No se pudo cargar el botón del slider")
+else:
+    print(f"Botón del slider cargado correctamente. Tamaño: {icon_slider_button.shape}")
+    
+# Variable para rastrear el color actualmente seleccionado
+color_seleccionado = None
 
 # Inicialización de botones de color y posiciones
 colores_botones = [
@@ -204,7 +231,7 @@ colores_botones = [
 
 # Configuración de botones
 botones = []
-altura_botones = int(cap.get(4) - button_size[1] - 10)  # Ajustado para dar espacio al botón
+altura_botones = int(cap.get(4) - button_size[1])  # Ajustado para dar espacio al botón
 ancho_frame = int(cap.get(3))
 espaciado = ancho_frame // (len(colores_botones) + 1)
 
@@ -213,9 +240,28 @@ for i, (color, nombreColor, nombreIcono) in enumerate(colores_botones):
     botones.append((color, (x_pos, altura_botones), nombreColor, nombreIcono))
 
 
-btn_Reset = (ancho_frame - 60, int(cap.get(4) // 8))
-btn_Borrar = (ancho_frame - 60, int(cap.get(4) * 2 // 8))
+# btn_Reset = (ancho_frame - 60, int(cap.get(4) // 8))
+# btn_Borrar = (ancho_frame - 60, int(cap.get(4) * 2 // 8))
 
+# Actualizar la posición del botón reset a la esquina inferior derecha
+def actualizar_posicion_reset(frame_width, frame_height):
+    return (frame_width - reset_button_size[0] - 10, frame_height - reset_button_size[1] - 10)
+
+# Función para verificar si un punto está en zona prohibida
+def esta_en_zona_prohibida(punto, frame_width, frame_height, button_size):
+    x, y = punto
+    
+    # Zona inferior (área de botones de colores)
+    altura_botones = int(frame_height - button_size[1] - 10)
+    if y > altura_botones:
+        return True
+    
+    # Zona izquierda (área del slider)
+    zona_slider_ancho = 120  # Ancho de la zona prohibida para el slider
+    if x < zona_slider_ancho:
+        return True
+        
+    return False
 
 # Parámetros del slider
 slider_min = 10  # Tamaño mínimo del trazo
@@ -237,49 +283,49 @@ pygame.mixer.init()
 
 spraySfx = pygame.mixer.Sound("Assets/spray.mp3")
 
-# Parámetros del temporizador
-tiempo_total = 320  # 90 segundos
-tiempo_restante = tiempo_total
-start_time = None  # Momento en que se empieza a pintar
-tiempo_terminado = None
+# # Parámetros del temporizador
+# tiempo_total = 320  # 90 segundos
+# tiempo_restante = tiempo_total
+# start_time = None  # Momento en que se empieza a pintar
+# tiempo_terminado = None
 
-# Parámetros de la barra de pintura
-barra_ancho_total = cap.get(3) - 100  # Ancho total de la barra
-barra_alto = 20  # Alto de la barra
-barra_x = 50  # Posición X de la barra
-barra_y = int(cap.get(4) - 10)  # Posición Y de la barra, debajo de los botones
+# # Parámetros de la barra de pintura
+# barra_ancho_total = cap.get(3) - 100  # Ancho total de la barra
+# barra_alto = 20  # Alto de la barra
+# barra_x = 50  # Posición X de la barra
+# barra_y = int(cap.get(4) - 10)  # Posición Y de la barra, debajo de los botones
 
 # ============================================= Temporizador y barra =====================================================
-def dibujar_barra_pintura(frame, tiempo_restante):
-    # Calculamos el ancho proporcional de la barra basado en el tiempo restante
-    ancho_barra = int((tiempo_restante / tiempo_total) * barra_ancho_total)
+# def dibujar_barra_pintura(frame, tiempo_restante):
+#     # Calculamos el ancho proporcional de la barra basado en el tiempo restante
+#     ancho_barra = int((tiempo_restante / tiempo_total) * barra_ancho_total)
     
-    # Asegurarnos de que las coordenadas sean enteros
-    cv2.rectangle(frame, (int(barra_x), int(barra_y)), (int(barra_x + barra_ancho_total), int(barra_y + barra_alto)), (255, 255, 255), 2)
+#     # Asegurarnos de que las coordenadas sean enteros
+#     cv2.rectangle(frame, (int(barra_x), int(barra_y)), (int(barra_x + barra_ancho_total), int(barra_y + barra_alto)), (255, 255, 255), 2)
     
-    # Dibujar la barra que representa la pintura restante
-    if ancho_barra > 0:
-        cv2.rectangle(frame, (int(barra_x), int(barra_y)), (int(barra_x + ancho_barra), int(barra_y + barra_alto)), (0, 255, 0), -1)
+#     # Dibujar la barra que representa la pintura restante
+#     if ancho_barra > 0:
+#         cv2.rectangle(frame, (int(barra_x), int(barra_y)), (int(barra_x + ancho_barra), int(barra_y + barra_alto)), (0, 255, 0), -1)
 
 
 # ============================================= Actualización del tiempo =================================================
-def actualizar_tiempo():
-    global start_time, tiempo_restante
-    if laser_activo and colorElegido is True and colorLaser is not (0,0,0):
-        if start_time is None:
-            # Si empezamos a pintar, registramos el tiempo de inicio
-            start_time = time.time()
-        else:
-            # Calculamos cuánto tiempo ha pasado desde que se empezó a pintar
-            tiempo_pasado = time.time() - start_time
-            start_time = time.time()  # Actualizamos el tiempo de inicio para la siguiente vez
-            tiempo_restante -= tiempo_pasado  # Reducimos el tiempo restante
-            tiempo_restante = max(tiempo_restante, 0)  # No dejamos que el tiempo sea negativo
+# def actualizar_tiempo():
+#     global start_time, tiempo_restante
+#     if laser_activo and colorElegido is True and colorLaser is not (0,0,0):
+#         if start_time is None:
+#             # Si empezamos a pintar, registramos el tiempo de inicio
+#             start_time = time.time()
+#         else:
+#             # Calculamos cuánto tiempo ha pasado desde que se empezó a pintar
+#             tiempo_pasado = time.time() - start_time
+#             start_time = time.time()  # Actualizamos el tiempo de inicio para la siguiente vez
+#             tiempo_restante -= tiempo_pasado  # Reducimos el tiempo restante
+#             tiempo_restante = max(tiempo_restante, 0)  # No dejamos que el tiempo sea negativo
 
 
-    else:
-        # Si no estamos pintando, pausamos el temporizador
-        start_time = None
+#     else:
+#         # Si no estamos pintando, pausamos el temporizador
+#         start_time = None
 
 while True:
     # Capturar cada frame
@@ -319,11 +365,18 @@ while True:
         tiempo_ultimo_laser = time.time()  # Actualizar el tiempo del último láser detectado
         mostrando_idle = False  # Desactivar la animación idle
         punto_actual = maxLoc
-        if laser_activo and ultimo_punto is not None and colorElegido and hayPintura:
-            # Dibujar una línea en la imagen de grafiti
-            cv2.line(grafiti, ultimo_punto, punto_actual, (colorLaser), tamaño_trazo)  # Rojo en BGR
-        # Actualizar el último punto y marcar el láser como activo
-        ultimo_punto = punto_actual
+
+        # Verificar si el punto está en zona prohibida antes de dibujar
+        if not esta_en_zona_prohibida(punto_actual, int(cap.get(3)), int(cap.get(4)), button_size):
+            if laser_activo and ultimo_punto is not None and colorElegido and hayPintura:
+                # Solo dibujar si el punto anterior también está fuera de la zona prohibida
+                if not esta_en_zona_prohibida(ultimo_punto, int(cap.get(3)), int(cap.get(4)), button_size):
+                    cv2.line(grafiti, ultimo_punto, punto_actual, (colorLaser), tamaño_trazo)
+            
+            ultimo_punto = punto_actual
+        else:
+            ultimo_punto = None  # Resetear el último punto si estamos en zona prohibida
+            
         laser_activo = True
 
         # pygame.mixer.music.play(loops=-1)
@@ -347,27 +400,27 @@ while True:
     combined = cv2.addWeighted(frame, 0.7, grafiti, 0.3, 0)
 
     # Si no estamos en idle, dibujamos toda la UI
-    if not mostrando_idle:
-        # Actualizar tiempo y dibujar barra de pintura
-        actualizar_tiempo()
-        dibujar_barra_pintura(combined, tiempo_restante)
+    # if not mostrando_idle:
+    #     # Actualizar tiempo y dibujar barra de pintura
+    #     actualizar_tiempo()
+    #     dibujar_barra_pintura(combined, tiempo_restante)
 
-        if tiempo_restante == 0:
-            hayPintura = False
-            spraySfx.stop()
-            tiempo_terminado = True
+    #     if tiempo_restante == 0:
+    #         hayPintura = False
+    #         spraySfx.stop()
+    #         tiempo_terminado = True
 
 
     # Actualizar el tiempo si el láser está pintando
-    actualizar_tiempo()
+    # actualizar_tiempo()
 
     # Dibujar la barra de pintura
-    dibujar_barra_pintura(frame, tiempo_restante)
+    # dibujar_barra_pintura(frame, tiempo_restante)
 
-    if tiempo_restante == 0:
-        hayPintura = False
-        spraySfx.stop()
-        tiempo_terminado = True
+    # if tiempo_restante == 0:
+    #     hayPintura = False
+    #     spraySfx.stop()
+    #     tiempo_terminado = True
         
         
 
@@ -380,14 +433,20 @@ while True:
             if (y >= 0 and y + button_size[1] <= combined.shape[0] and 
                 x >= 0 and x + button_size[0] <= combined.shape[1]):
                 
-                # Superponer el ícono usando la nueva función
-                combined = superponer_imagen_con_alpha(combined, nombreIcono, (x, y))
+            # Determinar qué ícono usar basado en si está seleccionado
+                icono_a_usar = iconos_estado[nombreColor]['selected'] if nombreColor == color_seleccionado else iconos_estado[nombreColor]['normal']
+                
+                # Superponer el ícono correspondiente
+                combined = superponer_imagen_con_alpha(combined, icono_a_usar, (x, y))
                 
                 # Verificar si el láser está sobre el botón
                 if distancia(maxLoc, (x + button_size[0]//2, y + button_size[1]//2)) < radio_boton:
                     colorElegido = True
                     colorLaser = color
-                    print(f"Color {nombreColor} activado")
+                    # Actualizar el color seleccionado
+                    if color_seleccionado != nombreColor:
+                        color_seleccionado = nombreColor
+                        print(f"Color {nombreColor} activado")
                     
         except Exception as e:
             print(f"Error al dibujar botón {nombreColor}: {e}")
@@ -395,47 +454,75 @@ while True:
 
     radio_boton = 35
     
-    # Botón de reset
-    reset_x = btn_Reset[0] - reset_button_size[0]//2
-    reset_y = btn_Reset[1] - reset_button_size[1]//2
+    # Actualizar la posición del botón reset
+    btn_Reset = actualizar_posicion_reset(int(cap.get(3)), int(cap.get(4)))
+    
+    # Dibujar el botón reset en su nueva posición
+    reset_x = btn_Reset[0]
+    reset_y = btn_Reset[1]
     combined = superponer_imagen_con_alpha(combined, icon_reset, (reset_x, reset_y))
     if distancia(maxLoc, btn_Reset) < radio_boton:
         print("Canvas borrado")
         colorElegido = False
         grafiti = np.zeros_like(combined)
-        # colorLaser = (0, 0, 0)
         laser_activo = False
-
-    # Botón de borrar
-    eraser_x = btn_Borrar[0] - reset_button_size[0]//2
-    eraser_y = btn_Borrar[1] - reset_button_size[1]//2
-    combined = superponer_imagen_con_alpha(combined, icon_eraser, (eraser_x, eraser_y))
-    if distancia(maxLoc, btn_Borrar) < radio_boton:
-        colorElegido = True
-        print("Borrador activado")
-        colorLaser = (0, 0, 0)
+        color_seleccionado = None 
+        spraySfx.stop()
+    # # Botón de borrar
+    # eraser_x = btn_Borrar[0] - reset_button_size[0]//2
+    # eraser_y = btn_Borrar[1] - reset_button_size[1]//2
+    # combined = superponer_imagen_con_alpha(combined, icon_eraser, (eraser_x, eraser_y))
+    # if distancia(maxLoc, btn_Borrar) < radio_boton:
+    #     colorElegido = True
+    #     print("Borrador activado")
+    #     colorLaser = (0, 0, 0)
 
 
     # ============================================= Slider =====================================================
 
-    # Dibujar el área del slider centrada en el eje Y
+    # Dibujar el slider y su controlador
     top_y = int(center_y - slider_height / 2)
     bottom_y = int(center_y + slider_height / 2)
-    # Dibujar el fondo del slider con el nuevo ícono
-    slider_background_x = slider_x
+
+    # Dibujar el fondo del slider
+    slider_background_x = slider_x - slider_width // 2
     slider_background_y = top_y
     combined = superponer_imagen_con_alpha(combined, icon_slider, (slider_background_x, slider_background_y))
 
-    # Dibujar el control del slider con el nuevo ícono
-    slider_control_x = slider_x - (slider_button_size[0] - slider_width)//2
-    slider_control_y = slider_pos - slider_button_size[1]//2
-    combined = superponer_imagen_con_alpha(combined, icon_slider_button, (slider_control_x, slider_control_y))
+    # Calcular la posición actual del botón deslizador
+    slider_control_x = 30 + slider_x - slider_button_size[0] // 2
 
     # Comprobar si el láser está dentro del área del slider
-    if slider_x < maxLoc[0] < slider_x + slider_width and top_y < maxLoc[1] < bottom_y:
+    if slider_x - slider_button_size[0]//2 < maxLoc[0] < slider_x + slider_width + slider_button_size[0]//2 and \
+    top_y < maxLoc[1] < bottom_y:
         slider_pos = maxLoc[1]
         tamaño_trazo = int(np.interp(slider_pos, [top_y, bottom_y], [slider_max, slider_min]))
+        tamaño_trazo = max(slider_min, min(slider_max, tamaño_trazo))
 
+    # Asegurar que slider_pos está inicializado
+    if 'slider_pos' not in locals():
+        slider_pos = center_y
+
+    # Calcular la posición vertical del botón teniendo en cuenta su tamaño
+    button_y = int(slider_pos - slider_button_size[1] // 2)
+
+    # Asegurarse de que el botón no se salga de los límites del slider
+    button_y = max(top_y, min(bottom_y - slider_button_size[1], button_y))
+
+    # Dibujar el botón del slider
+    if icon_slider_button is not None and isinstance(icon_slider_button, np.ndarray):
+        try:
+            # Asegurarse de que el botón tiene un canal alpha
+            if icon_slider_button.shape[2] != 4:
+                # Convertir a RGBA si no tiene canal alpha
+                alpha = np.ones((*icon_slider_button.shape[:2], 1), dtype=np.uint8) * 255
+                icon_slider_button = np.concatenate([icon_slider_button, alpha], axis=2)
+            
+            # Dibujar el botón del slider
+            button_pos = (slider_control_x, button_y)
+            combined = superponer_imagen_con_alpha(combined, icon_slider_button, button_pos)
+        except Exception as e:
+            print(f"Error al dibujar el botón del slider: {e}")
     # ==================================================================================================
 
     # Comprobar si debemos mostrar la animación idle
