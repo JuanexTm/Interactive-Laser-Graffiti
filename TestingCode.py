@@ -28,7 +28,7 @@ mostrando_idle = False
 def inicializar_video_idle():
     """Inicializa el video de idle"""
     try:
-        video = cv2.VideoCapture('idle.mp4')
+        video = cv2.VideoCapture('Assets/idle.mp4')
         if not video.isOpened():
             print("Error: No se pudo cargar el video de idle")
             return None
@@ -175,13 +175,13 @@ def superponer_imagen_con_alpha(fondo, imagen_rgba, pos):
 button_size = (160, 160)
 
 # Carga de imágenes con el nuevo sistema de respaldo
-icon_red = cargar_imagen_segura('Assets/redSpray.png', button_size)
-icon_yellow = cargar_imagen_segura('Assets/yellowSpray.png', button_size)
-icon_green = cargar_imagen_segura('Assets/greenSpray.png', button_size)
-icon_blue = cargar_imagen_segura('Assets/blueSpray.png', button_size)
-icon_lila = cargar_imagen_segura('Assets/purpleSpray.png', button_size)
-icon_pink = cargar_imagen_segura('Assets/pinkSpray.png', button_size)
-icon_white = cargar_imagen_segura('Assets/whiteSpray.png', button_size)
+icon_red = cargar_imagen_segura('Assets/Sprays/redSpray.png', button_size)
+icon_yellow = cargar_imagen_segura('Assets/Sprays/yellowSpray.png', button_size)
+icon_green = cargar_imagen_segura('Assets/Sprays/greenSpray.png', button_size)
+icon_blue = cargar_imagen_segura('Assets/Sprays/blueSpray.png', button_size)
+icon_lila = cargar_imagen_segura('Assets/Sprays/purpleSpray.png', button_size)
+icon_pink = cargar_imagen_segura('Assets/Sprays/pinkSpray.png', button_size)
+icon_white = cargar_imagen_segura('Assets/Sprays/whiteSpray.png', button_size)
 
 
 reset_button_size = (50, 50)  # Ajusta estos valores según el tamaño que desees
@@ -235,7 +235,7 @@ def distancia(p1, p2):
 pygame.mixer.init()
 # pygame.mixer.music.load('spray.mp3')
 
-spraySfx = pygame.mixer.Sound("spray.mp3")
+spraySfx = pygame.mixer.Sound("Assets/spray.mp3")
 
 # Parámetros del temporizador
 tiempo_total = 320  # 90 segundos
